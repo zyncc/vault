@@ -88,6 +88,7 @@ func isFirstRun(dbPath string) bool {
 
 //go:embed migrations/*.sql
 var MigrationsFolder embed.FS
+
 func runMigrations(dbPath string) error {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
@@ -97,7 +98,7 @@ func runMigrations(dbPath string) error {
 
 	goose.SetDialect("sqlite3")
 	goose.SetBaseFS(MigrationsFolder)
-	return goose.Up(db, "/migrations")
+	return goose.Up(db, "migrations")
 }
 
 func promptMasterPassword() (string, error) {
