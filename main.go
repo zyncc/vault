@@ -36,7 +36,7 @@ func bootstrapVault() error {
 		return nil
 	}
 
-	fmt.Println("🔐 First time setup")
+	fmt.Println("🔐 First time setuppppp")
 	fmt.Println("Set a master password to protect your vault")
 
 	master, err := promptMasterPassword()
