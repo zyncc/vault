@@ -9,8 +9,23 @@ import (
 	"context"
 )
 
+const createMasterPassword = `-- name: CreateMasterPassword :exec
+INSERT INTO master_password (password, salt)
+VALUES (?, ?)
+`
+
+type CreateMasterPasswordParams struct {
+	Password string
+	Salt     string
+}
+
+func (q *Queries) CreateMasterPassword(ctx context.Context, arg CreateMasterPasswordParams) error {
+	_, err := q.db.ExecContext(ctx, createMasterPassword, arg.Password, arg.Salt)
+	return err
+}
+
 const findPasswordUsingDomain = `-- name: FindPasswordUsingDomain :one
-SELECT id, domain, password, created_at, updated_at FROM password_store WHERE domain = ?
+SELECT id, domain, password, created_at, updated_at, email FROM password_store WHERE domain = ?
 `
 
 func (q *Queries) FindPasswordUsingDomain(ctx context.Context, domain string) (PasswordStore, error) {
@@ -22,12 +37,13 @@ func (q *Queries) FindPasswordUsingDomain(ctx context.Context, domain string) (P
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Email,
 	)
 	return i, err
 }
 
 const getAllPasswords = `-- name: GetAllPasswords :many
-SELECT id, domain, password, created_at, updated_at FROM password_store
+SELECT id, domain, password, created_at, updated_at, email FROM password_store
 `
 
 func (q *Queries) GetAllPasswords(ctx context.Context) ([]PasswordStore, error) {
@@ -45,6 +61,7 @@ func (q *Queries) GetAllPasswords(ctx context.Context) ([]PasswordStore, error) 
 			&i.Password,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Email,
 		); err != nil {
 			return nil, err
 		}
@@ -59,18 +76,35 @@ func (q *Queries) GetAllPasswords(ctx context.Context) ([]PasswordStore, error) 
 	return items, nil
 }
 
+const getMasterPassword = `-- name: GetMasterPassword :one
+SELECT password, salt FROM master_password
+`
+
+func (q *Queries) GetMasterPassword(ctx context.Context) (MasterPassword, error) {
+	row := q.db.QueryRowContext(ctx, getMasterPassword)
+	var i MasterPassword
+	err := row.Scan(&i.Password, &i.Salt)
+	return i, err
+}
+
 const insertIntoPasswordStore = `-- name: InsertIntoPasswordStore :exec
-INSERT INTO password_store (id, domain, password)
-VALUES (?, ?, ?)
+INSERT INTO password_store (id, domain, email, password)
+VALUES (?, ?, ?, ?)
 `
 
 type InsertIntoPasswordStoreParams struct {
 	ID       string
 	Domain   string
+	Email    string
 	Password string
 }
 
 func (q *Queries) InsertIntoPasswordStore(ctx context.Context, arg InsertIntoPasswordStoreParams) error {
-	_, err := q.db.ExecContext(ctx, insertIntoPasswordStore, arg.ID, arg.Domain, arg.Password)
+	_, err := q.db.ExecContext(ctx, insertIntoPasswordStore,
+		arg.ID,
+		arg.Domain,
+		arg.Email,
+		arg.Password,
+	)
 	return err
 }

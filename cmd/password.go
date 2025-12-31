@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"math/big"
 
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
+	"github.com/zyncc/vault/db"
+	"github.com/zyncc/vault/password"
 )
 
 var passwordCmd = &cobra.Command{
@@ -74,4 +78,47 @@ func generatePassword(length int) (string, error) {
 	}
 
 	return string(password), nil
+}
+
+func findPasswordCommand() {
+	p1 := promptui.Prompt{
+		Label: "Enter Master Password",
+		Mask:  '*',
+	}
+	q := db.Init()
+
+	masterPass, err := p1.Run()
+	if err != nil {
+		return
+	}
+
+	rawMasterQuery, err := q.GetMasterPassword(context.Background())
+	if err != nil {
+		return
+	}
+
+	valid, err := password.CompareHash(masterPass, rawMasterQuery.Password, rawMasterQuery.Salt)
+	if err != nil {
+		fmt.Println("couldnt compare master password")
+		return
+	}
+	if !valid {
+		fmt.Println("\n❌ Invalid Master Password!")
+		return
+	}
+
+	p2 := promptui.Prompt{
+		Label: "Enter the Domain",
+	}
+	domain, err := p2.Run()
+	if err != nil {
+		return
+	}
+
+	res, err := q.FindPasswordUsingDomain(context.Background(), domain)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("\nPassword: ", res.Password)
 }

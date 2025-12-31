@@ -8,10 +8,16 @@ import (
 	"time"
 )
 
+type MasterPassword struct {
+	Password string
+	Salt     string
+}
+
 type PasswordStore struct {
 	ID        string
 	Domain    string
 	Password  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Email     string
 }
