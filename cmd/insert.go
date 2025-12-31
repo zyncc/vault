@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
@@ -10,24 +11,12 @@ import (
 	"github.com/zyncc/vault/db"
 )
 
-func insertPasswordToDatabase(domain string, password string) error {
-	q := db.Init()
-	return q.InsertIntoPasswordStore(context.Background(), db.InsertIntoPasswordStoreParams{
-		ID:       uuid.NewString(),
-		Domain:   domain,
-		Password: password,
-	})
-}
-
-var domain string
-var password string
-
 var insertCmd = cobra.Command{
 	Use:   "insert",
 	Short: "Insert a new password into the vault",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := insertPasswordToDatabase(domain, password); err != nil {
-			if (strings.Contains(err.Error(), "2067")) {
+		if err := insertPasswordToDatabase(&domain, &password); err != nil {
+			if strings.Contains(err.Error(), "2067") {
 				fmt.Println("❌ An Existing Password exists for", domain)
 				return
 			}
@@ -37,6 +26,9 @@ var insertCmd = cobra.Command{
 		fmt.Printf("✅ Succesfully added password for %v to the vault\n", domain)
 	},
 }
+
+var domain string
+var password string
 
 func init() {
 	insertCmd.Flags().StringVarP(&domain, "domain", "d", "", "The Domain name of the website's password you want to insert. ex: reddit.com")
@@ -50,4 +42,28 @@ func init() {
 	}
 
 	rootCmd.AddCommand(&insertCmd)
+}
+
+func insertPasswordToDatabase(domain *string, password *string) error {
+	parseDomain(domain)
+	q := db.Init()
+	return q.InsertIntoPasswordStore(context.Background(), db.InsertIntoPasswordStoreParams{
+		ID:       uuid.NewString(),
+		Domain:   *domain,
+		Password: *password,
+	})
+}
+
+func parseDomain(domain *string) {
+	input := strings.TrimSpace(*domain)
+	if input == "" {
+		return
+	}
+
+	u, err := url.Parse(*domain)
+	if err != nil {
+		return 
+	}
+
+	*domain = strings.ToLower(u.Hostname())
 }

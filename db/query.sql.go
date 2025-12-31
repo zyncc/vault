@@ -9,6 +9,23 @@ import (
 	"context"
 )
 
+const findPasswordUsingDomain = `-- name: FindPasswordUsingDomain :one
+SELECT id, domain, password, created_at, updated_at FROM password_store WHERE domain = ?
+`
+
+func (q *Queries) FindPasswordUsingDomain(ctx context.Context, domain string) (PasswordStore, error) {
+	row := q.db.QueryRowContext(ctx, findPasswordUsingDomain, domain)
+	var i PasswordStore
+	err := row.Scan(
+		&i.ID,
+		&i.Domain,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getAllPasswords = `-- name: GetAllPasswords :many
 SELECT id, domain, password, created_at, updated_at FROM password_store
 `
