@@ -1,0 +1,18 @@
+BINARY_NAME := vault
+BIN_DIR := bin
+
+.PHONY: all clean build
+
+all: build
+
+build:
+	@mkdir -p $(BIN_DIR)
+	GOOS=darwin  GOARCH=arm64  go build -o $(BIN_DIR)/$(BINARY_NAME)-darwin-arm64
+	GOOS=darwin  GOARCH=amd64  go build -o $(BIN_DIR)/$(BINARY_NAME)-darwin-amd64
+	GOOS=linux   GOARCH=amd64  go build -o $(BIN_DIR)/$(BINARY_NAME)-linux-amd64
+	GOOS=linux   GOARCH=arm64  go build -o $(BIN_DIR)/$(BINARY_NAME)-linux-arm64
+	GOOS=windows GOARCH=amd64  go build -o $(BIN_DIR)/$(BINARY_NAME)-windows-amd64.exe
+	GOOS=windows GOARCH=arm64  go build -o $(BIN_DIR)/$(BINARY_NAME)-windows-arm64.exe
+
+clean:
+	rm -rf $(BIN_DIR)
